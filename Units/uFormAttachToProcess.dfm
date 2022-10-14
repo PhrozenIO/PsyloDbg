@@ -1,0 +1,114 @@
+object FormAttachToProcess: TFormAttachToProcess
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Attach to Process'
+  ClientHeight = 363
+  ClientWidth = 475
+  Color = clWhite
+  DoubleBuffered = True
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  KeyPreview = True
+  Position = poOwnerFormCenter
+  OnKeyUp = FormKeyUp
+  OnShow = FormShow
+  TextHeight = 15
+  object ProcessList: TListView
+    Left = 0
+    Top = 0
+    Width = 475
+    Height = 322
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
+    Align = alClient
+    BorderStyle = bsNone
+    Columns = <
+      item
+        AutoSize = True
+      end>
+    ReadOnly = True
+    RowSelect = True
+    ShowColumnHeaders = False
+    SmallImages = FormMain.ImageSystem
+    TabOrder = 0
+    ViewStyle = vsReport
+    OnCustomDrawItem = ProcessListCustomDrawItem
+    OnDblClick = ProcessListDblClick
+    OnDeletion = ProcessListDeletion
+    OnSelectItem = ProcessListSelectItem
+    ExplicitWidth = 461
+    ExplicitHeight = 289
+  end
+  object PanelBottom: TPanel
+    Left = 0
+    Top = 322
+    Width = 475
+    Height = 41
+    Align = alBottom
+    BevelOuter = bvNone
+    Color = 15790320
+    ParentBackground = False
+    TabOrder = 1
+    ExplicitTop = 289
+    ExplicitWidth = 461
+    object ButtonStart: TSpeedButton
+      AlignWithMargins = True
+      Left = 381
+      Top = 8
+      Width = 90
+      Height = 25
+      Margins.Left = 2
+      Margins.Top = 8
+      Margins.Right = 4
+      Margins.Bottom = 8
+      Align = alRight
+      Caption = 'Debug'
+      ImageIndex = 15
+      ImageName = 'bug-filled-new'
+      Images = FormMain.VirtualImageList
+      Enabled = False
+      OnClick = ButtonStartClick
+      ExplicitLeft = 321
+    end
+    object ButtonCancel: TSpeedButton
+      AlignWithMargins = True
+      Left = 193
+      Top = 8
+      Width = 90
+      Height = 25
+      Margins.Top = 8
+      Margins.Right = 2
+      Margins.Bottom = 8
+      Align = alRight
+      Caption = 'Cancel'
+      OnClick = ButtonCancelClick
+      ExplicitLeft = 119
+      ExplicitTop = 12
+    end
+    object ButtonRefresh: TSpeedButton
+      AlignWithMargins = True
+      Left = 287
+      Top = 8
+      Width = 90
+      Height = 25
+      Margins.Left = 2
+      Margins.Top = 8
+      Margins.Right = 2
+      Margins.Bottom = 8
+      Align = alRight
+      Caption = 'Refresh'
+      ImageIndex = 22
+      ImageName = 'symbol-refresh'
+      Images = FormMain.VirtualImageList
+      OnClick = ButtonRefreshClick
+      ExplicitLeft = 207
+    end
+  end
+end

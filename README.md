@@ -1,47 +1,82 @@
 <p align="center">
-<img src="Assets\image.png"/>
+<img src="Assets\sshot-1.png"/>
 </p>
 
 # PsyloDbg
 
-PsyloDbg is a very simple **Windows Debugger** that currently only monitor for debug events:
+PsyloDbg is a fast-growing user-friendly **Windows Debugger** entirerly coded in Delphi.
 
-* Exception
-* Create Thread
-* Create Process
-* Exit Thread
-* Exit Process
-* Load DLL
-* Unload DLL
-* Debug String
-* RIP
+The main goal of this project is to offer to Malware analysts another tool to short their response time during Malware analysis.
 
-It supports x86-32 and x86-64 application debugging.
+The project will grow in feature progressively (depending on my free time), see bellow list of expected features.
 
-You can create a new process (and optionnaly monitor all child process) or attach to a compatible and existing process.
+## Debugger Features
 
-I started recently this project to learn a bit more about how Debuggers works on Windows. This project is expected to grow in functionalities throughout my learning experience.
+> ☑ = Implemented, ☐ = Not yet implemented
 
-This application uses Windows API:
+---
 
-* [WaitForDebugEvent](https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-waitfordebugevent)
-* [WaitForDebugEventEx](https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-waitfordebugeventex) (Unicode)
-* [DebugActiveProcess](https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-debugactiveprocess)
-* [DebugActiveProcessStop](https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-debugactiveprocessstop)
-* [ContinueDebugEvent](https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-continuedebugevent)
+### Loaded Modules
 
-To receive debug events from debugged process (including child process if possible).
+* ☐ List.
+* ☐ Dump Reconstructed Module Image.
+* ☐ Export Module Functions.
+
+
+### ANSI / WIDE String
+
+* ☐ List file / memory strings.
+* ☐ Advanced search features.
+
+
+### Memory Map
+
+* ☑ List.
+* ☑ Identify PE Images and Sections.
+* ☐ Identify Thread Stacks.
+* ☐ Identify Heaps.
+* ☐ Dump Region(s) / Page(s) Memory.
+
+### Extra Tools
+
+* ☐ File Merger.
+* ☐ Hash Utils.
+
+### Misc
+
+* ☑ Catch Debug Events.
+* ☑ Attach running process to debugger.
+* ☐ Enumerate Threads.
+* ☐ Dump and reconstruct image(s) from process.
+* ☐ List open handles.
+* ☐ API Tracing.
+* ☐ Import Module and Functions.
+* ☐ Internationalization.
+* ☑ PsyloDbg Logging (Ex: Psylo Exception).
+
 
 ## Changelog
 
-- (2022/10/13) : Initial Release
+### 2022/10/13 : v0.1 - Initial Release
 
-## TODO List
-
-* Show Loaded Modules
-* Memory String / File String
-* Windows API Call Tracing
-* Dump Mounted Module Image
-* Show Memory Map
+- First Release, Supporting Debug Events.
 
 
+### 2022/10/21 : v0.2
+
+- Memory Map List Added.
+- Memory Dymp.
+- Better Exception Handling.
+- Logging.
+- Themes Supported.
+
+
+Memory Map
+<p align="center">
+<img src="Assets\sshot-2.png"/>
+</p>
+
+Themes and Memory Dump
+<p align="center">
+<img src="Assets\sshot-3.png"/>
+</p>

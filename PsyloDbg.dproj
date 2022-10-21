@@ -74,6 +74,7 @@
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=Phrozen;FileDescription=$(MSBuildProjectName);FileVersion=0.1.0.0;InternalName=;LegalCopyright=2022;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=0.1.0.0;Comments=</VerInfo_Keys>
+        <Custom_Styles>&quot;Aqua Light Slate|VCLSTYLE|$(BDSCOMMONDIR)\Styles\AquaLightSlate.vsf&quot;;&quot;Iceberg Classico|VCLSTYLE|$(BDSCOMMONDIR)\Styles\IcebergClassico.vsf&quot;;&quot;Lavender Classico|VCLSTYLE|$(BDSCOMMONDIR)\Styles\LavenderClassico.vsf&quot;;Sky|VCLSTYLE|$(BDSCOMMONDIR)\Styles\Sky.vsf;&quot;Slate Classico|VCLSTYLE|$(BDSCOMMONDIR)\Styles\SlateClassico.vsf&quot;</Custom_Styles>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_UsePackage>soapserver;IndySystem;vclwinx;fmx;vclie;DbxCommonDriver;bindengine;vcldb;IndyIPCommon;VCLRESTComponents;FireDACCommonODBC;FireDACCommonDriver;appanalytics;IndyProtocols;vclx;IndyIPClient;dbxcds;vcledge;vclFireDAC;bindcompvclwinx;bindcomp;FmxTeeUI;FireDACCommon;IndyCore;RESTBackendComponents;bindcompfmx;bindcompdbx;inetdb;rtl;FireDACMySQLDriver;FireDACSqliteDriver;DbxClientDriver;FireDACADSDriver;Tee;RESTComponents;DBXSqliteDriver;vcl;vclactnband;TeeUI;IndyIPServer;fmxFireDAC;dbexpress;dsnapxml;dsnapcon;soapmidas;adortl;DBXMySQLDriver;VclSmp;inet;vclimg;vcltouch;FireDACPgDriver;FireDAC;fmxase;inetdbxpress;xmlrtl;tethering;dbrtl;bindcompvcl;dsnap;fmxdae;TeeDB;CloudService;FireDACMSAccDriver;CustomIPTransport;fmxobj;bindcompvclsmp;FMXTee;soaprtl;vcldsnap;DBXInterBaseDriver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
@@ -142,31 +143,46 @@
         </DelphiCompile>
         <DCCReference Include="Libs\XSuperObject\XSuperObject.pas"/>
         <DCCReference Include="Libs\XSuperObject\XSuperJSON.pas"/>
-        <DCCReference Include="Units\uFormMain.pas">
+        <DCCReference Include="Units\Forms\uFormMain.pas">
             <Form>FormMain</Form>
         </DCCReference>
-        <DCCReference Include="Units\uExceptions.pas"/>
-        <DCCReference Include="Units\uDebuggerThread.pas"/>
+        <DCCReference Include="Units\Objects\uExceptions.pas"/>
+        <DCCReference Include="Units\Threads\uDebuggerThread.pas"/>
         <DCCReference Include="Units\uFunctions.pas"/>
-        <DCCReference Include="Units\uFrameEventDetail.pas">
+        <DCCReference Include="Units\Frames\uFrameEventDetail.pas">
             <Form>FrameEventDetail</Form>
-            <FormType>dfm</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
         <DCCReference Include="Units\uEventUtils.pas"/>
         <DCCReference Include="Units\uConstants.pas"/>
-        <DCCReference Include="Units\uFormAttachToProcess.pas">
+        <DCCReference Include="Units\Forms\uFormAttachToProcess.pas">
             <Form>FormAttachToProcess</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="Units\uFormDebugApplication.pas">
+        <DCCReference Include="Units\Forms\uFormDebugApplication.pas">
             <Form>FormDebugApplication</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="Units\uFrameDebugEvents.pas">
+        <DCCReference Include="Units\Frames\uFrameDebugEvents.pas">
             <Form>FrameDebugEvents</Form>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Frames\uFrameMemoryMap.pas">
+            <Form>FrameMemoryMap</Form>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Threads\uMemoryMapThread.pas"/>
+        <DCCReference Include="Units\Objects\uMemoryMap.pas"/>
+        <DCCReference Include="Units\uMemoryUtils.pas"/>
+        <DCCReference Include="Units\uGraphicUtils.pas"/>
+        <DCCReference Include="Units\Objects\uPortableExecutable.pas"/>
+        <DCCReference Include="Units\Frames\uFrameLog.pas">
+            <Form>FrameLog</Form>
             <FormType>dfm</FormType>
             <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Threads\uMemoryDumpThread.pas"/>
+        <DCCReference Include="Units\Forms\uFormDumpMemoryOperation.pas">
+            <Form>FormDumpMemoryOperation</Form>
+            <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
@@ -200,15 +216,15 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="Win64\Debug\PsyloDbg.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win64">
+                <DeployFile LocalName="Win32\Release\PsyloDbg.exe" Configuration="Release" Class="ProjectOutput">
+                    <Platform Name="Win32">
                         <RemoteName>PsyloDbg.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="Win64\Debug\PsyloDbg.rsm" Configuration="Debug" Class="DebugSymbols">
+                <DeployFile LocalName="Win64\Debug\PsyloDbg.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
-                        <RemoteName>PsyloDbg.rsm</RemoteName>
+                        <RemoteName>PsyloDbg.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

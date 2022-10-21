@@ -74,30 +74,58 @@ const
       _STATE_IMAGE_EVENT_ITEM                     = 9;
       _STATE_IMAGE_EVENT_ARRAY                    = 10;
       _STATE_IMAGE_EVENT_EXCEPTION                = 11;
+      _STATE_IMAGE_EXCEPTION                      = 28;
+      _STATE_IMAGE_SUCCESS                        = 31;
+      _STATE_IMAGE_INTERUPTION                    = 32;
+      _STATE_IMAGE_INFORMATION                    = 30;
 
 var
   // COLORS
-  _COLOR_1 : TColor;
-  _COLOR_2 : TColor;
-  _COLOR_3 : TColor;
-  _COLOR_4 : TColor;
-  _COLOR_5 : TColor;
-  _COLOR_6 : TColor;
-  _COLOR_7 : TColor;
-  _COLOR_8 : TColor;
-  _COLOR_9 : TColor;
+  _COLOR_1  : TColor;
+  _COLOR_2  : TColor;
+  _COLOR_3  : TColor;
+  _COLOR_4  : TColor;
+  _COLOR_5  : TColor;
+  _COLOR_6  : TColor;
+  _COLOR_7  : TColor;
+  _COLOR_8  : TColor;
+  _COLOR_9  : TColor;
+
+  // Light Colors
+  _COLOR_10 : TColor;
+  _COLOR_11 : TColor;
+  _COLOR_12 : TColor;  // Light Red
+
+  _COLOR_GRAD1_BEG : TColor;
+  _COLOR_GRAD1_END : TColor;
+
+  _COLOR_GRAD2_BEG : TColor;
+  _COLOR_GRAD2_END : TColor;
+
+  _ODD_LIST_BG_COLOR : TColor;
 
 implementation
 
 initialization
-  _COLOR_1 := rgb(177, 178, 255);
-  _COLOR_2 := rgb(170, 196, 255);
-  _COLOR_3 := rgb(214, 224, 240);
-  _COLOR_4 := rgb(255, 148, 148);
-  _COLOR_5 := rgb(255, 209, 209);
-  _COLOR_6 := rgb(210, 218, 255);
-  _COLOR_7 := rgb(182, 227, 136);
-  _COLOR_8 := rgb(233,230,161);
-  _COLOR_9 := rgb(255, 227, 225);
+  _COLOR_1  := rgb(233, 233, 255);
+  _COLOR_2  := rgb(231, 238, 254);
+  _COLOR_3  := rgb(243, 246, 250);
+  _COLOR_4  := rgb(255, 225, 250);
+  _COLOR_5  := rgb(255, 242, 225);
+  _COLOR_6  := rgb(231, 244, 249);
+  _COLOR_7  := rgb(234, 247, 254);
+  _COLOR_8  := rgb(248, 248, 229);
+  _COLOR_9  := rgb(255, 247, 246);
+  _COLOR_10 := rgb(242, 242, 255);
+  _COLOR_11 := rgb(249, 242, 255);
+  _COLOR_12 := rgb(254, 236, 231);
+
+  _COLOR_GRAD1_BEG := $00CAF3FF;
+  _COLOR_GRAD1_END := $008CEBFF;
+
+  _COLOR_GRAD2_BEG := rgb(202, 224, 255);
+  _COLOR_GRAD2_END := rgb(140, 207, 255);
+
+  _ODD_LIST_BG_COLOR := rgb(250, 250, 250);
 
 end.

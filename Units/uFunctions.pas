@@ -56,6 +56,9 @@ function IsProcessRunningSameArchitecture(const AProcessId : Cardinal) : Boolean
 function IsProcessElevatedById(const AProcessId : Cardinal) : Boolean;
 function IsProcessElevated(const hProcess : THandle) : Boolean;
 function IsCurrentProcessElevated() : Boolean;
+function DELF_GetMappedFileName(const hProcess : THandle; pOffset : Pointer) : String;
+function PhysicalToVirtualPath(APath : String) : String;
+function FormatSize(const ASize : Int64) : string;
 
 function SearchPathW(
     lpPath,
@@ -71,6 +74,52 @@ const PROCESS_QUERY_LIMITED_INFORMATION = $1000;
 implementation
 
 uses uExceptions;
+
+{ _.FormatSize }
+function FormatSize(const ASize : Int64) : string;
+const AByteDescription : Array[0..8] of string = ('Bytes', 'KiB', 'MB', 'GiB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+
+var ACount : Integer;
+begin
+  ACount := 0;
+
+  while ASize > Power(1024, ACount +1) do
+    Inc(ACount);
+
+  result := Format('%s %s', [FormatFloat('###0.00', ASize / Power(1024, ACount)), AByteDescription[ACount]]);
+end;
+
+
+{ _.PhysicalToVirtualPath }
+function PhysicalToVirtualPath(APath : String) : String;
+var i          : integer;
+    ADrive     : String;
+    ABuffer    : array[0..MAX_PATH-1] of Char;
+    ACandidate : String;
+begin
+  result := '';
+  {$I-}
+  try
+    for I := 0 to 25 do begin
+      ADrive := Format('%s:', [Chr(Ord('A') + i)]);
+      ///
+
+      if (QueryDosDevice(PWideChar(ADrive), ABuffer, MAX_PATH) = 0) then
+        continue;
+
+      ACandidate := String(ABuffer).ToLower();
+
+      if String(Copy(APath, 1, Length(ACandidate))).ToLower() = ACandidate then begin
+        Delete(APath, 1, Length(ACandidate));
+
+        result := Format('%s%s', [ADrive, APath]);
+      end;
+    end;
+  except
+    result := '';
+  end;
+  {$I+}
+end;
 
 { _.Ternary }
 function Ternary(const ACondition : Boolean; const APositiveResult, ANegativeResult : Integer) : Integer;
@@ -446,7 +495,7 @@ begin
   ///
 
   if AArchitecture = archUnknown then
-    raise Exception.Create('Target file architecture is not compatible.');
+    raise EPsyloException.Create('Target file architecture is not compatible.');
 
   {$IFDEF WIN64}
     ACurrent64 := True;
@@ -556,6 +605,26 @@ end;
 function IsCurrentProcessElevated() : Boolean;
 begin
   result := IsProcessElevated(GetCurrentProcess());
+end;
+
+{ _.DELF_GetMappedFileName }
+function DELF_GetMappedFileName(const hProcess : THandle; pOffset : Pointer) : String;
+var ALength         : Cardinal;
+    AReturnedLength : Cardinal;
+begin
+  result := '';
+  ///
+
+  ALength := MAX_PATH * 2;
+
+  SetLength(result, ALength);
+  try
+    AReturnedLength := GetMappedFileNameW(hProcess, pOffset, PWideChar(result), ALength);
+    if AReturnedLength = 0 then
+      raise EWindowsException.Create('GetMappedFileNameW');
+  finally
+    SetLength(result, AReturnedLength);
+  end;
 end;
 
 end.

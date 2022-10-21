@@ -12,47 +12,47 @@ The project will grow in feature progressively (depending on my free time), see 
 
 ## Debugger Features
 
-> ☑ = Implemented, ☐ = Not yet implemented
+> [x] = Implemented, [ ] = Not yet implemented
 
 ---
 
 ### Loaded Modules
 
-* ☐ List.
-* ☐ Dump Reconstructed Module Image.
-* ☐ Export Module Functions.
+- [ ] List.
+- [ ] Dump Reconstructed Module Image.
+- [ ] Export Module Functions.
 
 
 ### ANSI / WIDE String
 
-* ☐ List file / memory strings.
-* ☐ Advanced search features.
+- [ ] List file / memory strings.
+- [ ] Advanced search features.
 
 
 ### Memory Map
 
-* ☑ List.
-* ☑ Identify PE Images and Sections.
-* ☐ Identify Thread Stacks.
-* ☐ Identify Heaps.
-* ☐ Dump Region(s) / Page(s) Memory.
+- [x] List.
+- [x] Identify PE Images and Sections.
+- [ ] Identify Thread Stacks.
+- [ ] Identify Heaps.
+- [x] Dump Region(s) / Page(s) Memory.
 
 ### Extra Tools
 
-* ☐ File Merger.
-* ☐ Hash Utils.
+- ☐ File Merger.
+- ☐ Hash Utils.
 
 ### Misc
 
-* ☑ Catch Debug Events.
-* ☑ Attach running process to debugger.
-* ☐ Enumerate Threads.
-* ☐ Dump and reconstruct image(s) from process.
-* ☐ List open handles.
-* ☐ API Tracing.
-* ☐ Import Module and Functions.
-* ☐ Internationalization.
-* ☑ PsyloDbg Logging (Ex: Psylo Exception).
+- [x] Catch Debug Events.
+- [x] Attach running process to debugger.
+- [ ] Enumerate Threads.
+- [ ] Dump and reconstruct image(s) from process.
+- [ ] List open handles.
+- [ ] API Tracing.
+- [ ] Import Module and Functions.
+- [ ] Internationalization.
+- [x] PsyloDbg Logging (Ex: Psylo Exception).
 
 
 ## Changelog

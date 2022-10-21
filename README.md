@@ -4,11 +4,11 @@
 
 # PsyloDbg
 
-PsyloDbg is a fast-growing user-friendly **Windows Debugger** entirerly coded in Delphi.
+PsyloDbg is a fast-growing and user-friendly open-source Windows Debugger entirely coded in Delphi.
 
-The main goal of this project is to offer to Malware analysts another tool to short their response time during Malware analysis.
+The main goal of this project is to offer to Malware analysts another tool to short their response time during their analysis process.
 
-The project will grow in feature progressively (depending on my free time), see bellow list of expected features.
+The project is still in very early stage, it is expected to grow in feature progressively.
 
 ## Debugger Features
 

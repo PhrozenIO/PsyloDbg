@@ -12,7 +12,8 @@ The project will grow in feature progressively (depending on my free time), see 
 
 ## Debugger Features
 
-> [x] = Implemented, [ ] = Not yet implemented
+- [x] = Implemented
+- [ ] = Not yet implemented
 
 ---
 
@@ -39,8 +40,8 @@ The project will grow in feature progressively (depending on my free time), see 
 
 ### Extra Tools
 
-- ☐ File Merger.
-- ☐ Hash Utils.
+- [ ] File Merger.
+- [ ] Hash Utils.
 
 ### Misc
 

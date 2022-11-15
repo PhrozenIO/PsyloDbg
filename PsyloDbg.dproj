@@ -141,20 +141,13 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Libs\XSuperObject\XSuperObject.pas"/>
-        <DCCReference Include="Libs\XSuperObject\XSuperJSON.pas"/>
         <DCCReference Include="Units\Forms\uFormMain.pas">
             <Form>FormMain</Form>
         </DCCReference>
-        <DCCReference Include="Units\Objects\uExceptions.pas"/>
-        <DCCReference Include="Units\Threads\uDebuggerThread.pas"/>
-        <DCCReference Include="Units\uFunctions.pas"/>
         <DCCReference Include="Units\Frames\uFrameEventDetail.pas">
             <Form>FrameEventDetail</Form>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
-        <DCCReference Include="Units\uEventUtils.pas"/>
-        <DCCReference Include="Units\uConstants.pas"/>
         <DCCReference Include="Units\Forms\uFormAttachToProcess.pas">
             <Form>FormAttachToProcess</Form>
         </DCCReference>
@@ -169,21 +162,70 @@
             <Form>FrameMemoryMap</Form>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
+        <DCCReference Include="Units\Frames\uFrameLog.pas">
+            <Form>FrameLog</Form>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Forms\uFormThreadOperation.pas">
+            <Form>FormThreadOperation</Form>
+        </DCCReference>
+        <DCCReference Include="Units\Frames\Components\uFrameComponentAlert.pas">
+            <Form>FrameComponentAlert</Form>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Frames\uFrameModules.pas">
+            <Form>FrameModules</Form>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Forms\uFormPsyloThreadManager.pas">
+            <Form>FormPsyloThreadManager</Form>
+        </DCCReference>
+        <DCCReference Include="Units\Forms\uFormAbout.pas">
+            <Form>FormAbout</Form>
+        </DCCReference>
+        <DCCReference Include="Units\Forms\uFormDebugProcessTree.pas">
+            <Form>FormDebugProcessTree</Form>
+        </DCCReference>
+        <DCCReference Include="Units\Frames\Components\uFrameComponentComboProcess.pas">
+            <Form>FrameComponentComboProcess</Form>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Frames\___Frames\uPsyloFrame.pas">
+            <Form>PsyloFrame</Form>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Units\Forms\uFormDumpMemoryImage.pas">
+            <Form>FormDumpMemoryImage</Form>
+        </DCCReference>
+        <DCCReference Include="Units\Forms\___Forms\uPsyloForm.pas">
+            <Form>FormPsylo</Form>
+        </DCCReference>
+        <DCCReference Include="Libs\XSuperObject\XSuperObject.pas"/>
+        <DCCReference Include="Libs\XSuperObject\XSuperJSON.pas"/>
+        <DCCReference Include="Units\Objects\uExceptions.pas"/>
+        <DCCReference Include="Units\Threads\uDebuggerThread.pas"/>
+        <DCCReference Include="Units\uFunctions.pas"/>
+        <DCCReference Include="Units\uEventUtils.pas"/>
+        <DCCReference Include="Units\uConstants.pas"/>
         <DCCReference Include="Units\Threads\uMemoryMapThread.pas"/>
         <DCCReference Include="Units\Objects\uMemoryMap.pas"/>
         <DCCReference Include="Units\uMemoryUtils.pas"/>
         <DCCReference Include="Units\uGraphicUtils.pas"/>
         <DCCReference Include="Units\Objects\uPortableExecutable.pas"/>
-        <DCCReference Include="Units\Frames\uFrameLog.pas">
-            <Form>FrameLog</Form>
-            <FormType>dfm</FormType>
-            <DesignClass>TFrame</DesignClass>
-        </DCCReference>
         <DCCReference Include="Units\Threads\uMemoryDumpThread.pas"/>
-        <DCCReference Include="Units\Forms\uFormDumpMemoryOperation.pas">
-            <Form>FormDumpMemoryOperation</Form>
-            <FormType>dfm</FormType>
-        </DCCReference>
+        <DCCReference Include="Units\Objects\uMemoryModules.pas"/>
+        <DCCReference Include="Units\Threads\uMemoryModulesThread.pas"/>
+        <DCCReference Include="Units\Threads\Components\uPsyloThread.pas"/>
+        <DCCReference Include="Units\uTypes.pas"/>
+        <DCCReference Include="Units\Objects\uDebugSession.pas"/>
+        <DCCReference Include="Units\Objects\uMessageListener.pas"/>
+        <DCCReference Include="Units\uMessages.pas"/>
+        <DCCReference Include="Units\Objects\uModuleDump.pas"/>
+        <DCCReference Include="Units\Objects\uProcessDumper.pas"/>
+        <DCCReference Include="Units\Threads\Components\uPsyloOperationThread.pas"/>
+        <DCCReference Include="Units\Threads\uDumpMemoryImageThread.pas"/>
+        <DCCReference Include="Units\uStrings.pas"/>
+        <DCCReference Include="Units\uDialogs.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -225,6 +267,12 @@
                 <DeployFile LocalName="Win64\Debug\PsyloDbg.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
                         <RemoteName>PsyloDbg.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\PsyloDbg.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>PsyloDbg.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

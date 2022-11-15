@@ -25,6 +25,7 @@ uses Winapi.Windows,
      Winapi.ShellAPI,
      Winapi.PsAPI,
      Winapi.TlHelp32,
+     Winapi.ShlObj,
      System.Classes,
      VCL.Controls,
      System.Math,
@@ -42,7 +43,7 @@ function BufferToHexView(ABuffer : PVOID; ABufferSize : Int64; pLastOffset : PNa
 function DELF_GetModuleFileNameEx(const hProcess, hModule : THandle) : String;
 function GetImagePathFromProcessId(const AProcessID : Cardinal) : String;
 procedure InitializeSystemIcons(var AImages : TImageList; var AFileInfo : TSHFileInfo; ALargeIcon : Boolean = False);
-function SystemFileIcon(const AFileName : string; const AExtensionMode : Boolean = False) : Integer;
+function SystemFileIcon(const AFileName : string; AExtensionMode : Boolean = False) : Integer;
 function GetWindowsDirectory() : string;
 function GetParentProcessIdByProcessId(AProcessId : Integer) : Cardinal;
 function StringToHex(const AString : String) : String;
@@ -56,9 +57,26 @@ function IsProcessRunningSameArchitecture(const AProcessId : Cardinal) : Boolean
 function IsProcessElevatedById(const AProcessId : Cardinal) : Boolean;
 function IsProcessElevated(const hProcess : THandle) : Boolean;
 function IsCurrentProcessElevated() : Boolean;
-function DELF_GetMappedFileName(const hProcess : THandle; pOffset : Pointer) : String;
+function DELF_GetMappedFileName(const hProcess : THandle; pOffset : Pointer) : String; overload;
+function DELF_GetMappedFileName(const AProcessId : Cardinal; const pOffset : Pointer) : String; overload;
 function PhysicalToVirtualPath(APath : String) : String;
 function FormatSize(const ASize : Int64) : string;
+function GetElevationLabel() : String;
+function GetProcessMainModule(const AProcessId : Cardinal) : THandle;
+procedure Open(const AOpenCommand : String);
+function GetParentProcessId(const AProcessId : Cardinal) : Cardinal;
+function DELF_GetProcessImageFileName(const hProcess : THandle) : String;
+procedure FileProperties(const AFileName : String);
+function ShowFileOnExplorer(const AFileName : String) : Boolean;
+procedure ShowFilesOnExplorer(const ADirectory : String; const AStringList : TStringList);
+
+function IsUserAnAdmin(): Bool; stdcall; external 'SHELL32.DLL';
+
+function GetProcessImageFileNameW(
+  hProcess         : THandle;
+  lpImageFileName  : LPWSTR;
+  nSize            : DWORD
+): DWORD; stdcall; external 'PSAPI.DLL';
 
 function SearchPathW(
     lpPath,
@@ -74,6 +92,88 @@ const PROCESS_QUERY_LIMITED_INFORMATION = $1000;
 implementation
 
 uses uExceptions;
+
+{ _.ShowFileOnExplorer }
+function ShowFileOnExplorer(const AFileName : String) : Boolean;
+var AItemIDList : PItemIDList;
+begin
+  result := False;
+  ///
+
+  if not FileExists(AFileName) then
+    Exit();
+  ///
+
+
+  AItemIDList := ILCreateFromPath(PWideChar(AFileName));
+  if AItemIDList = nil then
+    Exit();
+  try
+    result := (SHOpenFolderAndSelectItems(AItemIDList, 0, nil, 0) = S_OK);
+  finally
+    ILFree(AItemIDList);
+  end;
+
+  if not result then
+    Open(ExtractFilePath(AFileName));
+end;
+
+{ _.ShowFilesOnExplorer }
+procedure ShowFilesOnExplorer(const ADirectory : String; const AStringList : TStringList);
+var AList : array of PItemIDList;
+    pDir  : PItemIDList;
+    AFile : String;
+    I     : Cardinal;
+begin
+  if not Assigned(AStringList) then
+    Exit();
+  ///
+
+  SetLength(AList, AStringList.Count);
+
+  for I := 0 to AStringList.count -1 do begin
+    AFile := AStringList.Strings[I];
+
+    if not FileExists(AFile) then
+      continue;
+    ///
+
+    AList[I] := ILCreateFromPath(PWideChar(AFile));
+  end;
+
+  pDir := ILCreateFromPath(PWideChar(ADirectory));
+
+  SHOpenFolderAndSelectItems(pDir, Length(AList), PItemIDList(AList), 0);
+
+  for I := 0 to Length(AList) -1 do begin
+    if Assigned(AList[I]) then
+      ILFree(AList[I]);
+  end;
+
+  ILFree(pDir);
+end;
+
+
+{ _.FileProperties }
+procedure FileProperties(const AFileName : String);
+var AShellExecInfo : TShellExecuteInfo;
+begin
+  ZeroMemory(@AShellExecInfo, SizeOf(TShellExecuteInfo));
+  ///
+
+  AShellExecInfo.cbSize := SizeOf(AShellExecInfo);
+  AShellExecInfo.lpFile := PWideChar(AFileName);
+  AShellExecInfo.lpVerb := 'properties';
+  AShellExecInfo.fMask  := SEE_MASK_INVOKEIDLIST;
+
+  ShellExecuteEx(@AShellExecInfo);
+end;
+
+{ _.Open }
+procedure Open(const AOpenCommand : String);
+begin
+  ShellExecute(0, 'open', PWideChar(AOpenCommand), nil, nil, SW_SHOW);
+end;
 
 { _.FormatSize }
 function FormatSize(const ASize : Int64) : string;
@@ -258,12 +358,14 @@ begin
 end;
 
 { _.SystemFileIcon }
-function SystemFileIcon(const AFileName : string; const AExtensionMode : Boolean = False) : Integer;
+function SystemFileIcon(const AFileName : string; AExtensionMode : Boolean = False) : Integer;
 var AFileInfo : TSHFileInfo;
     AFlags    : Integer;
 begin
   ZeroMemory(@AFileInfo, sizeof(AFileInfo));
   ///
+
+  AExtensionMode := AFileName.IsEmpty or (not FileExists(AFileName));
 
   AFlags := SHGFI_SMALLICON or SHGFI_SYSICONINDEX;
   if AExtensionMode then
@@ -625,6 +727,106 @@ begin
   finally
     SetLength(result, AReturnedLength);
   end;
+end;
+
+function DELF_GetMappedFileName(const AProcessId : Cardinal; const pOffset : Pointer) : String;
+var hProcess : THandle;
+begin
+  hProcess := OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION or PROCESS_VM_READ, True, AProcessId);
+  if hProcess = INVALID_HANDLE_VALUE then
+    raise EWindowsException.Create('OpenProcess');
+  try
+    result := DELF_GetMappedFileName(hProcess, pOffset);
+  finally
+    CloseHandle(hProcess);
+  end;
+end;
+
+{ _.GetElevationLabel }
+function GetElevationLabel() : String;
+begin
+  if IsUserAnAdmin() then
+    result := 'Administrator'
+  else
+    result := 'Unprivileged';
+end;
+
+{ _.GetProcessMainModule }
+function GetProcessMainModule(const AProcessId : Cardinal) : THandle;
+var hProcess  : THandle;
+    ACBNeeded : Cardinal;
+begin
+  result := INVALID_HANDLE_VALUE;
+  ///
+
+  hProcess := OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION or PROCESS_VM_READ, True, AProcessId);
+  if hProcess = INVALID_HANDLE_VALUE then
+    raise EWindowsException.Create('OpenProcess');
+  try
+    if not EnumProcessModules(hProcess, @result, SizeOf(HMODULE), ACBNeeded) then
+      raise EWindowsException.Create(Format('EnumProcessModules[pid: %d]', [AProcessId]));
+    ///
+  finally
+    CloseHandle(hProcess);
+  end;
+end;
+
+{ _.GetParentProcessId }
+function GetParentProcessId(const AProcessId : Cardinal) : Cardinal;
+var hSnapshot     : THandle;
+    AProcessEntry : TProcessEntry32;
+begin
+  result := 0;
+  ///
+
+  ZeroMemory(@AProcessEntry, sizeOf(TProcessEntry32));
+  AProcessEntry.dwSize := SizeOf(AProcessEntry);
+
+  hSnapshot := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  try
+    if NOT Process32First(hSnapshot, AProcessEntry) then
+      Exit();
+
+    if AProcessEntry.th32ProcessID = AProcessId then begin
+      result := AProcessEntry.th32ParentProcessID;
+
+      Exit();
+    end;
+
+    while Process32Next(hSnapshot, AProcessEntry) do begin
+      if (AProcessEntry.th32ProcessID = AProcessId) then begin
+        result := AProcessEntry.th32ParentProcessID;
+
+        Break;
+      end;
+    end;
+  finally
+    CloseHandle(hSnapshot);
+  end;
+end;
+
+{ _.DELF_GetProcessImageFileName }
+function DELF_GetProcessImageFileName(const hProcess : THandle) : String;
+var ALength         : Cardinal;
+    AReturnedLength : Cardinal;
+    AImagePath      : String;
+begin
+  result := 'Unknown';
+  ///
+
+  ALength := MAX_PATH * 2;
+
+  SetLength(AImagePath, ALength);
+  try
+    AReturnedLength := GetProcessImageFileNameW(hProcess, PWideChar(AImagePath), ALength);
+    if AReturnedLength = 0 then
+      Exit();
+  finally
+    SetLength(AImagePath, AReturnedLength);
+  end;
+
+  ///
+  result := PhysicalToVirtualPath(AImagePath);
 end;
 
 end.

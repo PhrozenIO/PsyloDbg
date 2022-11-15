@@ -17,6 +17,8 @@
 {                                                                              }
 {******************************************************************************}
 
+// TODO: Integrate with uModuleDump.pas
+
 unit uPortableExecutable;
 
 interface

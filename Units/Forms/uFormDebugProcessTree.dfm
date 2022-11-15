@@ -1,0 +1,70 @@
+object FormDebugProcessTree: TFormDebugProcessTree
+  Left = 0
+  Top = 0
+  Caption = 'Debug Process Tree'
+  ClientHeight = 307
+  ClientWidth = 400
+  Color = clWhite
+  DoubleBuffered = True
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  Position = poMainFormCenter
+  OnShow = FormShow
+  TextHeight = 15
+  object VST: TVirtualStringTree
+    AlignWithMargins = True
+    Left = 4
+    Top = 4
+    Width = 392
+    Height = 299
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
+    AccessibleName = 'Module Base'
+    Align = alClient
+    Colors.BorderColor = 15987699
+    Colors.DisabledColor = clGray
+    Colors.DropMarkColor = 15385233
+    Colors.DropTargetColor = 15385233
+    Colors.DropTargetBorderColor = 15385233
+    Colors.FocusedSelectionColor = 15385233
+    Colors.FocusedSelectionBorderColor = 15385233
+    Colors.GridLineColor = 15987699
+    Colors.HeaderHotColor = clBlack
+    Colors.HotColor = clBlack
+    Colors.SelectionRectangleBlendColor = 15385233
+    Colors.SelectionRectangleBorderColor = 15385233
+    Colors.SelectionTextColor = clBlack
+    Colors.TreeLineColor = 9471874
+    Colors.UnfocusedColor = clGray
+    Colors.UnfocusedSelectionColor = clWhite
+    Colors.UnfocusedSelectionBorderColor = clWhite
+    DefaultNodeHeight = 25
+    Header.AutoSizeIndex = 0
+    Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoShowSortGlyphs, hoHeaderClickAutoSort]
+    Images = FormMain.ImageSystem
+    StateImages = FormMain.VirtualImageList
+    TabOrder = 0
+    TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoSort, toAutoSpanColumns, toAutoTristateTracking, toAutoDeleteMovedNodes, toAutoChangeScale]
+    TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines, toUseExplorerTheme]
+    TreeOptions.SelectionOptions = [toExtendedFocus, toFullRowSelect, toMiddleClickSelect, toMultiSelect, toRightClickSelect, toRestoreSelection]
+    OnBeforeCellPaint = VSTBeforeCellPaint
+    OnChange = VSTChange
+    OnFocusChanged = VSTFocusChanged
+    OnGetText = VSTGetText
+    OnGetImageIndex = VSTGetImageIndex
+    OnGetNodeDataSize = VSTGetNodeDataSize
+    Touch.InteractiveGestures = [igPan, igPressAndTap]
+    Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
+    Columns = <
+      item
+        Position = 0
+        Text = 'Process Id'
+        Width = 388
+      end>
+  end
+end

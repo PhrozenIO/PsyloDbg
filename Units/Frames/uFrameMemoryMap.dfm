@@ -1,21 +1,16 @@
-object FrameMemoryMap: TFrameMemoryMap
-  Left = 0
-  Top = 0
+inherited FrameMemoryMap: TFrameMemoryMap
   Width = 870
   Height = 532
   Align = alClient
-  DoubleBuffered = True
-  Color = clWhite
-  ParentBackground = False
-  ParentColor = False
-  ParentDoubleBuffered = False
-  TabOrder = 0
+  Color = 15790320
+  ExplicitWidth = 870
+  ExplicitHeight = 532
   object VST: TVirtualStringTree
     AlignWithMargins = True
     Left = 1
-    Top = 1
+    Top = 50
     Width = 868
-    Height = 530
+    Height = 481
     Margins.Left = 1
     Margins.Top = 1
     Margins.Right = 1
@@ -86,8 +81,27 @@ object FrameMemoryMap: TFrameMemoryMap
         Width = 278
       end>
   end
+  inline FrameComponentComboProcess1: TFrameComponentComboProcess
+    Left = 0
+    Top = 0
+    Width = 870
+    Height = 49
+    Align = alTop
+    AutoSize = True
+    DoubleBuffered = True
+    Color = clWhite
+    ParentBackground = False
+    ParentColor = False
+    ParentDoubleBuffered = False
+    TabOrder = 1
+    ExplicitWidth = 870
+    ExplicitHeight = 49
+    inherited ComboBox: TComboBoxEx
+      Width = 862
+      ExplicitWidth = 862
+    end
+  end
   object PopupMenu: TPopupMenu
-    Images = FormMain.VirtualImageList
     OnPopup = PopupMenuPopup
     Left = 296
     Top = 176

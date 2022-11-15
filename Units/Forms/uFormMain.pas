@@ -18,6 +18,9 @@
 {******************************************************************************}
 
 // Improve Exception Notification System (Overall Exception System)
+// Use TPsyloThread instead of TThread for previous features and implement them in Thread Watcher System.
+// Code terminate debugging on parent process end.
+// TThreadList is badly designed for Thread Worker Manager. Fix that!
 
 unit uFormMain;
 
@@ -29,25 +32,10 @@ uses
   OMultiPanel, System.ImageList, Vcl.ImgList, Winapi.ShellAPI, System.Generics.Collections,
   Vcl.VirtualImageList, Vcl.BaseImageCollection, Vcl.ImageCollection, XSuperObject,
   Winapi.ShLwApi, Winapi.GDIPAPI, uFrameDebugEvents, Vcl.ComCtrls, uDebuggerThread,
-  Vcl.StdCtrls, Vcl.ToolWin, Vcl.WinXCtrls, uFrameMemoryMap, uFrameLog;
+  Vcl.StdCtrls, Vcl.ToolWin, Vcl.WinXCtrls, uFrameMemoryMap, uFrameLog,
+  uFrameComponentAlert, uFrameModules, uTypes, uDebugSession;
 
 type
-  TDebugMode = (
-    dmCreate,
-    dmAttach
-  );
-
-  TDebugSessionInformation = class
-  private
-    FProcessId : Cardinal;
-  public
-    {@C}
-    constructor Create(const AProcessId: Cardinal);
-
-    {@G}
-    property ProcessId : Cardinal read FProcessId;
-  end;
-
   TFormMain = class(TForm)
     MainMenu: TMainMenu;
     File1: TMenuItem;
@@ -80,6 +68,21 @@ type
     TabLog: TTabSheet;
     N3: TMenuItem;
     theme1: TMenuItem;
+    appearance1: TMenuItem;
+    General1: TMenuItem;
+    OnSessionCloseClearAll1: TMenuItem;
+    FrameComponentAlert1: TFrameComponentAlert;
+    ToolButton1: TToolButton;
+    ToolClear: TToolButton;
+    TabModules: TTabSheet;
+    ToolButton2: TToolButton;
+    ToolButton4: TToolButton;
+    ToolButtonRepo: TToolButton;
+    ToolButton5: TToolButton;
+    ToolProcessTree: TToolButton;
+    ToolButton6: TToolButton;
+    ToolButton8: TToolButton;
+    ToolDumpPE: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure DisplayEventColors1Click(Sender: TObject);
     procedure Exit1Click(Sender: TObject);
@@ -94,6 +97,14 @@ type
     procedure About1Click(Sender: TObject);
     procedure PagesChange(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure FormResize(Sender: TObject);
+    procedure ToolClearClick(Sender: TObject);
+    procedure ToolButton4Click(Sender: TObject);
+    procedure ToolButtonRepoClick(Sender: TObject);
+    procedure ToolProcessTreeClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure ToolButton6Click(Sender: TObject);
+    procedure ToolDumpPEClick(Sender: TObject);
   private
     FFileInfo                  : TSHFileInfo;
     FDefaultExeIconIndex       : Integer;
@@ -101,6 +112,7 @@ type
     FDebugMode                 : TDebugMode;
     FFrameDebugEvents          : TFrameDebugEvents;
     FFrameMemoryMap            : TFrameMemoryMap;
+    FFrameModules              : TFrameModules;
     FFrameLog                  : TFrameLog;
     FLastDebuggedProcessId     : Cardinal;
     FDebugSessionInformation   : TDebugSessionInformation;
@@ -108,16 +120,20 @@ type
     {@M}
     procedure OnDebuggerStatusChange(Sender: TDebuggerThread; const ADebuggerStatus : TDebuggerStatus);
     procedure RestartDebugger();
-    procedure Reset();
+    procedure CloseSession(const AResetData : Boolean = True);
+    procedure ResetData();
     function GetDebugging() : Boolean;
     procedure RefreshVCLThemes();
     procedure OnThemeChange(Sender: TObject);
+    procedure OnSessionCreateProcess(Sender : TObject; const ADebugProcess : TDebugProcess);
+    procedure OnSessionExitProcess(Sender : TObject; const ADebugProcess : TDebugProcess);
   public
     {@M}
     procedure OnException(Sender : TObject; E : Exception);
     procedure DebugApplication(const AFileName, AProcessArguments : String; const ADebugChild, AShowProcess : Boolean);
     procedure AttachProcess(const AProcessId : Cardinal);
     procedure Log(const AMessage : String; const Sender: TObject; const ALevel : TLogLevel);
+    procedure SetFormCaption(ACaption : String = '');
 
     {@C}
     constructor Create(AOwner : TComponent); override;
@@ -138,33 +154,67 @@ implementation
 {$R *.dfm}
 
 uses uFunctions, uExceptions, uEventUtils, uConstants, uFormAttachToProcess,
-     uFormDebugApplication, uFormDumpMemoryOperation, VCL.Styles, VCL.Themes;
+     uFormDebugApplication, uFormThreadOperation, VCL.Styles, VCL.Themes,
+     uFormPsyloThreadManager, uFormAbout, uFormDebugProcessTree,
+     uFormDumpMemoryImage;
 
-(* TDebugSessionInformation *)
-
-constructor TDebugSessionInformation.Create(const AProcessId: Cardinal);
+procedure TFormMain.OnSessionCreateProcess(Sender : TObject; const ADebugProcess : TDebugProcess);
 begin
-  inherited Create();
-  ///
-
-  FProcessId  := AProcessId;
+  FormDebugProcessTree.AddProcess(ADebugProcess);
 end;
 
-(* TFormMain *)
+procedure TFormMain.OnSessionExitProcess(Sender : TObject; const ADebugProcess : TDebugProcess);
+begin
+  FormDebugProcessTree.RemoveProcess(ADebugProcess);
+end;
+
+procedure TFormMain.SetFormCaption(ACaption : String = '');
+begin
+  if not ACaption.IsEmpty then
+    ACaption := ' ' + ACaption;
+  ///
+
+  self.Caption := Format('%s v%s%s - %s', [
+    APP_NAME,
+    APP_VERSION,
+    ACaption,
+    GetElevationLabel
+  ]);
+end;
 
 function TFormMain.GetDebugging() : Boolean;
 begin
   result := Assigned(FDebugSessionInformation);
 end;
 
-procedure TFormMain.Reset();
+procedure TFormMain.ResetData();
 begin
-  if Assigned(FDebugSessionInformation) then
+  FrameComponentAlert1.ResetData();
+  FFrameDebugEvents.ResetData();
+  FFrameMemoryMap.ResetData();
+  FFrameModules.ResetData();
+end;
+
+procedure TFormMain.CloseSession(const AResetData : Boolean = True);
+begin
+  if Assigned(FDebugSessionInformation) then begin
+    self.FrameComponentAlert1.SetMessage(
+      Format('Current displayed data comes from a terminated debugging session (pid: %d).', [
+        FDebugSessionInformation.ProcessId
+      ])
+    , akInformation, True);
+
     FreeAndNil(FDebugSessionInformation);
+
+    FormDebugProcessTree.ResetData();
+
+    ///
+    self.Resize();
+  end;
   ///
 
-  FFrameDebugEvents.Reset();
-  FFrameMemoryMap.Reset();
+  if AResetData then
+    self.ResetData();
 end;
 
 procedure TFormMain.Log(const AMessage : String; const Sender: TObject; const ALevel : TLogLevel);
@@ -188,9 +238,10 @@ begin
   AIndex := TPageControl(Sender).ActivePageIndex;
   ///
 
-  if AIndex = TabMemoryMap.TabIndex then begin
-    FFrameMemoryMap.Refresh();
-  end;
+  if AIndex = TabMemoryMap.TabIndex then
+    FFrameMemoryMap.Refresh()
+  else if AIndex = TabModules.TabIndex then
+    FFrameModules.Refresh();
 end;
 
 procedure TFormMain.OnDebuggerStatusChange(Sender: TDebuggerThread; const ADebuggerStatus : TDebuggerStatus);
@@ -204,26 +255,33 @@ begin
   self.ToolPauseResumeDebug.Enabled      := self.Debug1.Enabled;
   self.ToolStopDebug.Enabled             := self.Debug1.Enabled;
   self.ToolRestartDebug.Enabled          := self.Debug1.Enabled;
+  self.ToolDumpPE.Enabled                := self.Debug1.Enabled;
 
   case ADebuggerStatus of
     dbgStart: begin
-
-      self.Reset();
+      self.CloseSession();
     end;
 
     dbgStop: begin
       Log(Format('Debugger has stopped debugging process: %d', [Sender.ProcessId]), self, llInteruption);
 
-      self.Reset();
+      ///
+      self.CloseSession(OnSessionCloseClearAll1.Checked);
     end;
 
     dbgProcessAttached: begin
       Log(Format('Debugger has attached to process: %d', [Sender.ProcessId]), self, llSuccess);
 
       FDebugSessionInformation := TDebugSessionInformation.Create(Sender.ProcessId);
+      FDebugSessionInformation.OnCreateProcess := OnSessionCreateProcess;
+      FDebugSessionInformation.OnExitProcess   := OnSessionExitProcess;
+
+      self.SetFormCaption(Format('(Debugging: %d)', [
+        FDebugSessionInformation.ProcessId
+      ]));
 
       ///
-      PagesChange(self.Pages);
+      self.Pages.ActivePage := self.TabDebugEvents;
     end;
   end;
 end;
@@ -244,9 +302,40 @@ begin
   self.DebugApplicationAdvanced1.Click();
 end;
 
+procedure TFormMain.ToolButton4Click(Sender: TObject);
+begin
+  FormPsyloThreadManager.Show();
+end;
+
+procedure TFormMain.ToolButton6Click(Sender: TObject);
+begin
+  self.About1.Click();
+end;
+
+procedure TFormMain.ToolButtonRepoClick(Sender: TObject);
+begin
+  Open('https://github.com/DarkCoderSc/PsyloDbg');
+end;
+
+procedure TFormMain.ToolClearClick(Sender: TObject);
+begin
+  if MessageDlg('This action will clear data from all panes. Are you sure?', mtConfirmation, [mbYes, mbNo], 0) = ID_YES then
+    self.ResetData();
+end;
+
 procedure TFormMain.ToolDebugApplicationClick(Sender: TObject);
 begin
   self.DebugFile1.Click();
+end;
+
+procedure TFormMain.ToolDumpPEClick(Sender: TObject);
+begin
+  FormDumpMemoryImage.Show();
+end;
+
+procedure TFormMain.ToolProcessTreeClick(Sender: TObject);
+begin
+  FormDebugProcessTree.Show();
 end;
 
 procedure TFormMain.ToolRestartDebugClick(Sender: TObject);
@@ -269,7 +358,7 @@ end;
 
 procedure TFormMain.About1Click(Sender: TObject);
 begin
-  MessageDlg('Coded by Jean-Pierre LESUEUR (@DarkCoderSc).' + #13#10 + 'https://www.github.com/darkcodersc', mtInformation, [mbOk], 0);
+  FormAbout.Show();
 end;
 
 procedure TFormMain.AttachProcess(const AProcessId : Cardinal);
@@ -314,6 +403,8 @@ begin
   inherited Create(AOwner);
   ///
 
+  self.SetFormCaption();
+
   FDefaultExeIconIndex := SystemFileIcon('.exe', True);
 
   FDebugger := nil;
@@ -326,6 +417,9 @@ begin
 
   FFrameLog := TFrameLog.Create(TabLog);
   FFrameLog.Parent := TabLog;
+
+  FFrameModules := TFrameModules.Create(TabModules);
+  FFrameModules.Parent := TabModules;
 
   FLastDebuggedProcessId := 0;
 
@@ -344,9 +438,6 @@ end;
 
 destructor TFormMain.Destroy();
 begin
-  if Assigned(FDebugger) then
-    FreeAndNil(FDebugger);
-
   if Assigned(FFrameDebugEvents) then
     FreeAndNil(FFrameDebugEvents);
 
@@ -355,6 +446,9 @@ begin
 
   if Assigned(FFrameLog) then
     FreeAndNil(FFrameLog);
+
+  if Assigned(FFrameModules) then
+    FreeAndNil(FFrameModules);
 
   ///
   inherited Destroy();
@@ -370,6 +464,12 @@ begin
   self.Close();
 end;
 
+procedure TFormMain.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  if Assigned(FDebugger) then
+    FreeAndNil(FDebugger);
+end;
+
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
   InitializeSystemIcons(ImageSystem, FFileInfo);
@@ -377,6 +477,12 @@ begin
   Application.OnException := OnException;
 
   Pages.ActivePageIndex := 0;
+end;
+
+procedure TFormMain.FormResize(Sender: TObject);
+begin
+  if self.FrameComponentAlert1.Visible then
+    self.FrameComponentAlert1.DoResize();
 end;
 
 procedure TFormMain.FormShow(Sender: TObject);

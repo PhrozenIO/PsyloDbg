@@ -10,6 +10,38 @@ The main goal of this project is to offer to Malware analysts another tool to sh
 
 The project is still in very early stage, it is expected to grow in feature progressively.
 
+# Images
+
+## Debug Events
+
+<p align="center">
+<img src="Assets\sshot-0.png"/>
+</p>
+
+## Memory Map
+
+<p align="center">
+<img src="Assets\sshot-2.png"/>
+</p>
+
+## Loaded Modules
+
+<p align="center">
+<img src="Assets\sshot-3.png"/>
+</p>
+
+## Debugged Process Tree
+
+<p align="center">
+<img src="Assets\sshot-4.png"/>
+</p>
+
+## Dump and Reconstruct PE Image (Beta)
+
+<p align="center">
+<img src="Assets\sshot-5.png"/>
+</p>
+
 ## Debugger Features
 
 - [x] = Implemented
@@ -20,8 +52,8 @@ The project is still in very early stage, it is expected to grow in feature prog
 ### Loaded Modules
 
 - [ ] List.
-- [ ] Dump Reconstructed Module Image.
-- [ ] Export Module Functions.
+- [x] Dump Reconstructed Module Image.
+- [ ] List Exported Functions.
 
 
 ### ANSI / WIDE String
@@ -48,7 +80,7 @@ The project is still in very early stage, it is expected to grow in feature prog
 - [x] Catch Debug Events.
 - [x] Attach running process to debugger.
 - [ ] Enumerate Threads.
-- [ ] Dump and reconstruct image(s) from process.
+- [x] Dump and reconstruct image(s) from process.
 - [ ] List open handles.
 - [ ] API Tracing.
 - [ ] Import Module and Functions.
@@ -71,13 +103,13 @@ The project is still in very early stage, it is expected to grow in feature prog
 - Logging.
 - Themes Supported.
 
+### 2022/XX/XX : v0.3
 
-Memory Map
-<p align="center">
-<img src="Assets\sshot-2.png"/>
-</p>
+- Option to keep session information when debug process stop.
+- PsyloDbg Window Title is now dynamic.
+- Better thread system (with thread manager) - previous feature needs to implement new thread system.
+- Enumerate loaded modules.
+- Certain features now support child process (Ex: loaded modules, memory map etc..)
+- Memory Map now support child process.
+- Dump and reconstruct module image (Reconstruct PE - Beta)
 
-Themes and Memory Dump
-<p align="center">
-<img src="Assets\sshot-3.png"/>
-</p>

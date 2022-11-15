@@ -25,14 +25,10 @@ uses
   Winapi.Windows,
   System.SysUtils,
   System.Classes,
-  System.Generics.Collections;
+  System.Generics.Collections,
+  uPsyloOperationThread;
 
 type
-  TOnThreadStart = procedure(Sender: TObject; const ATotalTasks: Cardinal) of object;
-  TOnTaskBegin = procedure(Sender: TObject; const ALabel : String; const AProgressMax: UInt64) of object;
-  TOnTaskEnd = TNotifyEvent;
-  TOnTaskProgress = procedure(Sender: TObject; const AProgress: UInt64) of object;
-
   TMemoryDumpTask = class
   private
     FStartOffset    : NativeUInt;
@@ -58,35 +54,22 @@ type
     property EndOffset      : NativeUInt read GetEndOffset;
   end;
 
-  TMemoryDumpThread = class(TThread)
+  TMemoryDumpThread = class(TPsyloOperationThread)
   private
     FProcessId      : Cardinal;
     FProcessHandle  : THandle;
     FChunkSize      : Cardinal;
     FTasks          : TObjectList<TMemoryDumpTask>;
 
-    FOnThreadStart  : TOnThreadStart;
-    FOnThreadStop   : TNotifyEvent;
-    FOnTaskBegin    : TOnTaskBegin;
-    FOnTaskEnd      : TOnTaskEnd;
-    FOnTaskProgress : TOnTaskProgress;
-
     {@M}
     function DumpMemory(const AMemoryDumpTask: TMemoryDumpTask) : Boolean;
   protected
     {@M}
-    procedure Execute; override;
+    procedure ThreadExecute; override;
   public
     {@C}
     constructor Create(const AProcessId : Cardinal); overload;
     destructor Destroy(); override;
-
-    {@S}
-    property OnThreadStart  : TOnThreadStart  write FOnThreadStart;
-    property OnThreadStop   : TNotifyEvent    write FOnThreadStop;
-    property OnTaskBegin    : TOnTaskBegin    write FOnTaskBegin;
-    property OnTaskEnd      : TOnTaskEnd      write FOnTaskEnd;
-    property OnTaskProgress : TOnTaskProgress write FOnTaskProgress;
 
     {@G/S}
     property Tasks : TObjectList<TMemoryDumpTask> read FTasks write FTasks;
@@ -94,7 +77,7 @@ type
 
 implementation
 
-uses uFormMain, uExceptions;
+uses uFormMain, uExceptions, uConstants;
 
 (* TMemoryDumpTask Class *)
 
@@ -200,10 +183,7 @@ begin
       if not WriteFile(AMemoryDumpTask.DestFileHandle, PByte(pBuffer)^, AReadSize, ABytesWritten, nil) then
         Exit();
 
-      if Assigned(FOnTaskProgress) then
-        Synchronize(procedure begin
-          FOnTaskProgress(self, ACursor);
-        end);
+      NotifyTaskProgress(AMemoryDumpTask.ContentSize, ACursor);
 
       ///
       Inc(ATotalRead, ABytesRead);
@@ -220,84 +200,57 @@ begin
   end;
 end;
 
-{ TMemoryDumpThread.Execute }
-procedure TMemoryDumpThread.Execute;
+{ TMemoryDumpThread.ThreadExecute }
+procedure TMemoryDumpThread.ThreadExecute;
 var ATask : TMemoryDumpTask;
 begin
-  if Assigned(FOnThreadStart) then
-    Synchronize(procedure begin
-      FOnThreadStart(self, FTasks.Count);
-    end);
+  NotifyOperationStart();
   try
-    try
-      for ATask in FTasks do begin
-        if Terminated then
-          break;
-        ///
+    NotifyTaskCount(FTasks.Count);
+    ///
 
-        if Assigned(FOnTaskBegin) then
+    for ATask in FTasks do begin
+      if Terminated then
+        break;
+      ///
+
+      NotifyTaskStart(
+        Format('%p -> %p', [
+          Pointer(ATask.StartOffset),
+          Pointer(ATask.EndOffset)
+        ])
+      );
+
+      try
+        if not self.DumpMemory(ATask) then
           Synchronize(procedure begin
-            FOnTaskBegin(
-                self,
-                Format('%p -> %p', [
-                  Pointer(ATask.StartOffset),
-                  Pointer(ATask.EndOffset)
-                ]),
-                ATask.FContentSize
-            );
+            FormMain.OnException(self, EPsyloException.Create(
+              Format('Error encoutered during %p -> %p region dump for process %d.', [
+                Pointer(ATask.StartOffset),
+                Pointer(ATask.EndOffset),
+                FProcessId
+              ]),
+            False));
           end);
-        try
-          if not self.DumpMemory(ATask) then
-            Synchronize(procedure begin
-              FormMain.OnException(self, EPsyloException.Create(
-                Format('Error encoutered during %p -> %p region dump for process %d.', [
-                  Pointer(ATask.StartOffset),
-                  Pointer(ATask.EndOffset),
-                  FProcessId
-                ]),
-              False));
-            end);
-        finally
-          if Assigned(FOnTaskEnd) then
-            Synchronize(procedure begin
-              FOnTaskEnd(self);
-            end);
-        end;
+      finally
+        NotifyTaskEnd();
       end;
-    except
-      on E : Exception do
-        Synchronize(procedure begin
-          FormMain.OnException(self, E);
-        end);
     end;
   finally
-    if Assigned(FOnThreadStop) then
-      Synchronize(procedure begin
-        FOnThreadStop(self);
-      end);
-
-    ///
-    ExitThread(0);
+    NotifyOperationEnd();
   end;
 end;
 
 { TMemoryDumpThread.Create }
 constructor TMemoryDumpThread.Create(const AProcessId : Cardinal);
 begin
-  inherited Create(True);
+  inherited Create(FormMain, 'Dump Memory', _ICON_MEMORY_DUMP);
   ///
 
   FProcessId      := AProcessId;
   FChunkSize      := 1024 * 8;
-  FOnThreadStart  := nil;
-  FOnThreadStop   := nil;
-  FOnTaskBegin    := nil;
-  FOnTaskEnd      := nil;
-  FOnTaskProgress := nil;
 
   FTasks := TObjectList<TMemoryDumpTask>.Create(True);
-
-  self.FreeOnTerminate := False;
 
   FProcessHandle := OpenProcess(PROCESS_VM_READ, False, FProcessId);
   if FProcessHandle = INVALID_HANDLE_VALUE then
@@ -307,11 +260,6 @@ end;
 { TMemoryDumpThread.Destroy }
 destructor TMemoryDumpThread.Destroy();
 begin
-  self.Terminate();
-  ///
-
-  self.WaitFor();
-
   if FProcessHandle = INVALID_HANDLE_VALUE then
     CloseHandle(FProcessHandle);
 

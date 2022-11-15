@@ -48,11 +48,13 @@ type
     IconWarning: TVirtualImage;
     PanelIcon: TPanel;
     ImageIcon: TVirtualImage;
+    CheckBoxEndDebuggerParentProcess: TCheckBox;
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure ButtonCancelClick(Sender: TObject);
     procedure ButtonStartClick(Sender: TObject);
     procedure EditApplicationRightButtonClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure CheckBoxDebugChildClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -97,6 +99,11 @@ begin
 
   ///
   self.Close();
+end;
+
+procedure TFormDebugApplication.CheckBoxDebugChildClick(Sender: TObject);
+begin
+  CheckBoxEndDebuggerParentProcess.Enabled := TCheckBox(Sender).Checked;
 end;
 
 procedure TFormDebugApplication.EditApplicationRightButtonClick(

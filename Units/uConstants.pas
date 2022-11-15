@@ -25,6 +25,10 @@ interface
 uses Winapi.Windows, VCL.Graphics;
 
 const
+      // General
+      APP_NAME                 = 'PsyloDbg';
+      APP_VERSION              = '0.3';
+
       // JSON KEYS
       _PROCESS_ID              = 'Process_Id';
       _IMAGE_PATH              = 'Image_Path';
@@ -78,6 +82,12 @@ const
       _STATE_IMAGE_SUCCESS                        = 31;
       _STATE_IMAGE_INTERUPTION                    = 32;
       _STATE_IMAGE_INFORMATION                    = 30;
+      _STATE_IMAGE_FIRE                           = 36;
+      _STATE_IMAGE_PROCESS_DEAD                   = 39;
+
+      // IMAGE_INDEX (ICONS)
+      _ICON_MEMORY_DUMP = 29;
+      _ICON_MODULE_DUMP = 43;
 
 var
   // COLORS

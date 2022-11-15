@@ -26,7 +26,9 @@
   *
   *)
 
-  // Updated by Jean-Pierre LESUEUR to avoid having shitty Indy components embedded
+  // Updated by Jean-Pierre LESUEUR: avoid having shitty Indy components embedded
+
+  // Updated by Jean-Pierre LESUEUR: UInt64 .U Supported.
 
 unit XSuperObject;
 
@@ -114,9 +116,11 @@ type
   ['{EBD49266-BEF2-4B79-9BAF-329F725E0568}']
     function GetBoolean(V: Typ): Boolean;
     function GetInteger(V: Typ): Int64;
+    function GetUInteger(V: Typ): UInt64;
     function GetString(V: Typ): String;
     procedure SetBoolean(V: Typ; const Value: Boolean);
     procedure SetInteger(V: Typ; const Value: Int64);
+    procedure SetUInteger(V: Typ; const Value: UInt64); // JPL
     procedure SetString(V: Typ; const Value: String);
     function GetObject(V: Typ): ISuperObject;
     procedure SetObject(V: Typ; const Value: ISuperObject);
@@ -141,6 +145,7 @@ type
     property Null[V: Typ]: TMemberStatus read GetNull write SetNull;
     property S[V: Typ]: String read GetString write SetString;
     property I[V: Typ]: Int64 read GetInteger write SetInteger;
+    property U[V: Typ]: UInt64 read GetUInteger write SetUInteger;
     property B[V: Typ]: Boolean read GetBoolean write SetBoolean;
     property F[V: Typ]: Double read GetDouble write SetDouble;
     property O[V: Typ]: ISuperObject read GetObject write SetObject;
@@ -188,6 +193,7 @@ type
     function GetArray(V: Typ): ISuperArray; virtual;
     function GetBoolean(V: Typ): Boolean; virtual;
     function GetInteger(V: Typ): Int64; virtual;
+    function GetUInteger(V: Typ): UInt64; virtual;
     function GetString(V: Typ): String; virtual;
     function GetDouble(V: Typ): Double; virtual;
     function GetAncestor(V: Typ): IJSONAncestor; inline;
@@ -202,6 +208,7 @@ type
     procedure SetArray(V: Typ; const Value: ISuperArray); virtual;
     procedure SetBoolean(V: Typ; const Value: Boolean); virtual;
     procedure SetInteger(V: Typ; const Value: Int64); virtual;
+    procedure SetUInteger(V: Typ; const Value: UInt64); virtual;
     procedure SetString(V: Typ; const Value: String); virtual;
     procedure SetDouble(V: Typ; const Value: Double); virtual;
     procedure SetNull(V: Typ; const Value: TMemberStatus); virtual;
@@ -214,6 +221,7 @@ type
     property Null[V: Typ]: TMemberStatus read GetNull write SetNull;
     property S[V: Typ]: String read GetString write SetString;
     property I[V: Typ]: Int64 read GetInteger write SetInteger;
+    property U[V: Typ]: UInt64 read GetUInteger write SetUInteger;
     property B[V: Typ]: Boolean read GetBoolean write SetBoolean;
     property F[V: Typ]: Double read GetDouble write SetDouble;
     property O[V: Typ]: ISuperObject read GetObject write SetObject;
@@ -241,6 +249,7 @@ type
     function GetDataType: TDataType;
     function GetFloat: Double;
     function GetInteger: Int64;
+    function GetUInteger: UInt64;
     function GetObject: ISuperObject;
     function GetString: String;
     function GetName: String;
@@ -254,6 +263,7 @@ type
     procedure SetBoolean(const Value: Boolean);
     procedure SetFloat(const Value: Double);
     procedure SetInteger(const Value: Int64);
+    procedure SetUInteger(const Value: UInt64);
     procedure SetString(const Value: String);
     procedure SetVariant(const Value: Variant);
 
@@ -261,6 +271,7 @@ type
     property AsArray: ISuperArray read GetArray;
     property AsString: String read GetString write SetString;
     property AsInteger: Int64 read GetInteger write SetInteger;
+    property AsUInteger: UInt64 read GetUInteger write SetUInteger;
     property AsFloat: Double read GetFloat write SetFloat;
     property AsBoolean: Boolean read GetBoolean write SetBoolean;
     property AsVariant: Variant read GetVariant write SetVariant;
@@ -281,11 +292,13 @@ type
     function GetDataType: TDataType;
     function GetFloat: Double;
     function GetInteger: Int64;
+    function GetUInteger: UInt64;
     function GetObject: ISuperObject;
     function GetString: String;
     procedure SetBoolean(const Value: Boolean);
     procedure SetFloat(const Value: Double);
     procedure SetInteger(const Value: Int64);
+    procedure SetUInteger(const Value: UInt64);
     procedure SetString(const Value: String);
     function GetName: String;
     function GetVariant: Variant;
@@ -305,6 +318,7 @@ type
     property AsArray: ISuperArray read GetArray;
     property AsString: String read GetString write SetString;
     property AsInteger: Int64 read GetInteger write SetInteger;
+    property AsUInteger: UInt64 read GetUInteger write SetUInteger;
     property AsFloat: Double read GetFloat write SetFloat;
     property AsBoolean: Boolean read GetBoolean write SetBoolean;
     property AsVariant: Variant read GetVariant write SetVariant;
@@ -951,6 +965,13 @@ begin
     Result := GetValue<TJSONInteger>(V).ValueEx<Int64>;
 end;
 
+function TBaseJSON<T, Typ>.GetUInteger(V: Typ): UInt64;
+begin
+  Result := 0;
+  if Member(V) then
+    Result := GetValue<TJSONInteger>(V).ValueEx<UInt64>;
+end;
+
 function TBaseJSON<T, Typ>.GetNull(V: Typ): TMemberStatus;
 var
   Val: IJSONAncestor;
@@ -1067,6 +1088,11 @@ end;
 procedure TBaseJSON<T, Typ>.SetInteger(V: Typ; const Value: Int64);
 begin
   Member<TJSONInteger, Int64>(V, Value);
+end;
+
+procedure TBaseJSON<T, Typ>.SetUInteger(V: Typ; const Value: UInt64);
+begin
+  Member<TJSONInteger, UInt64>(V, Value);
 end;
 
 procedure TBaseJSON<T, Typ>.SetNull(V: Typ; const Value: TMemberStatus);
@@ -2806,6 +2832,17 @@ begin
      Result := TJSONInteger(FJSON).Value;
 end;
 
+function TCast.GetUInteger: UInt64;
+begin
+  if not Assigned(FJSON) then
+     Result := 0
+  else
+  if DataType <> dtInteger then
+     Result := StrToIntDef(VarToStr(GetVariant), 0)
+  else
+     Result := TJSONInteger(FJSON).Value;
+end;
+
 function TCast.GetName: String;
 begin
   Result := FName;
@@ -2886,6 +2923,12 @@ begin
 end;
 
 procedure TCast.SetInteger(const Value: Int64);
+begin
+  if not Assigned(FJSON) then Exit;
+  TJSONInteger(FJSON).Value := Value;
+end;
+
+procedure TCast.SetUInteger(const Value: UInt64);
 begin
   if not Assigned(FJSON) then Exit;
   TJSONInteger(FJSON).Value := Value;

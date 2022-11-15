@@ -5,7 +5,7 @@ object FrameLog: TFrameLog
   Height = 771
   Align = alClient
   DoubleBuffered = True
-  Color = clWhite
+  Color = 15790320
   ParentBackground = False
   ParentColor = False
   ParentDoubleBuffered = False
@@ -34,7 +34,7 @@ object FrameLog: TFrameLog
     Colors.HotColor = clBlack
     Colors.SelectionRectangleBlendColor = 15385233
     Colors.SelectionRectangleBorderColor = 15385233
-    Colors.SelectionTextColor = clWhite
+    Colors.SelectionTextColor = clBlack
     Colors.TreeLineColor = 9471874
     Colors.UnfocusedColor = clGray
     Colors.UnfocusedSelectionColor = clWhite

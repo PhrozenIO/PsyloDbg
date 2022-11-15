@@ -4,7 +4,7 @@ object FormDebugApplication: TFormDebugApplication
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Debug Application'
-  ClientHeight = 265
+  ClientHeight = 295
   ClientWidth = 435
   Color = clWhite
   DoubleBuffered = True
@@ -20,7 +20,7 @@ object FormDebugApplication: TFormDebugApplication
   TextHeight = 15
   object PanelBottom: TPanel
     Left = 0
-    Top = 224
+    Top = 254
     Width = 435
     Height = 41
     Align = alBottom
@@ -67,22 +67,20 @@ object FormDebugApplication: TFormDebugApplication
     Left = 0
     Top = 0
     Width = 435
-    Height = 224
+    Height = 254
     Align = alClient
     BevelOuter = bvNone
     Color = clWhite
     ParentBackground = False
     TabOrder = 1
-    ExplicitLeft = 32
-    ExplicitTop = 40
-    ExplicitWidth = 185
-    ExplicitHeight = 41
+    ExplicitWidth = 421
+    ExplicitHeight = 191
     object PanelCore: TPanel
       AlignWithMargins = True
       Left = 8
       Top = 8
       Width = 419
-      Height = 208
+      Height = 238
       Margins.Left = 8
       Margins.Top = 8
       Margins.Right = 8
@@ -98,7 +96,7 @@ object FormDebugApplication: TFormDebugApplication
         Left = 78
         Top = 0
         Width = 2
-        Height = 208
+        Height = 238
         Align = alRight
         Pen.Color = 15790320
         ExplicitLeft = 32
@@ -110,7 +108,7 @@ object FormDebugApplication: TFormDebugApplication
         Left = 88
         Top = 0
         Width = 331
-        Height = 208
+        Height = 238
         Margins.Left = 8
         Margins.Top = 0
         Margins.Right = 0
@@ -119,6 +117,8 @@ object FormDebugApplication: TFormDebugApplication
         BevelOuter = bvNone
         Color = clWhite
         TabOrder = 0
+        ExplicitLeft = 74
+        ExplicitHeight = 175
         object Label1: TLabel
           AlignWithMargins = True
           Left = 0
@@ -211,10 +211,11 @@ object FormDebugApplication: TFormDebugApplication
           Checked = True
           State = cbChecked
           TabOrder = 3
+          OnClick = CheckBoxDebugChildClick
         end
         object PanelWarning: TPanel
           Left = 0
-          Top = 156
+          Top = 186
           Width = 331
           Height = 52
           Align = alBottom
@@ -222,6 +223,7 @@ object FormDebugApplication: TFormDebugApplication
           BevelOuter = bvNone
           ParentColor = True
           TabOrder = 4
+          ExplicitTop = 123
           object Label4: TLabel
             AlignWithMargins = True
             Left = 20
@@ -267,16 +269,34 @@ object FormDebugApplication: TFormDebugApplication
             ImageName = 'warning'
           end
         end
+        object CheckBoxEndDebuggerParentProcess: TCheckBox
+          AlignWithMargins = True
+          Left = 0
+          Top = 162
+          Width = 331
+          Height = 17
+          Margins.Left = 0
+          Margins.Top = 10
+          Margins.Right = 0
+          Margins.Bottom = 0
+          Align = alTop
+          Caption = 'Close Debugger Session if Parent Process Dies.'
+          TabOrder = 5
+          ExplicitLeft = -5
+          ExplicitTop = 181
+        end
       end
       object PanelIcon: TPanel
         Left = 0
         Top = 0
         Width = 78
-        Height = 208
+        Height = 238
         Align = alClient
         BevelOuter = bvNone
         ParentColor = True
         TabOrder = 1
+        ExplicitWidth = 64
+        ExplicitHeight = 175
         object ImageIcon: TVirtualImage
           Left = 0
           Top = 0

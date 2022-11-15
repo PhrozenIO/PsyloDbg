@@ -24,7 +24,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, VirtualTrees, uMemoryMap,
-  Vcl.Menus;
+  Vcl.Menus, uPsyloFrame, uFrameComponentComboProcess;
 
 type
   TTreeData = record
@@ -37,7 +37,7 @@ type
   end;
   PTreeData = ^TTreeData;
 
-  TFrameMemoryMap = class(TFrame)
+  TFrameMemoryMap = class(TPsyloFrame)
     VST: TVirtualStringTree;
     PopupMenu: TPopupMenu;
     Refresh1: TMenuItem;
@@ -48,6 +48,7 @@ type
     DumpSelectedMemory1: TMenuItem;
     N3: TMenuItem;
     SelectAll1: TMenuItem;
+    FrameComponentComboProcess1: TFrameComponentComboProcess;
     procedure VSTGetNodeDataSize(Sender: TBaseVirtualTree;
       var NodeDataSize: Integer);
     procedure VSTGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
@@ -71,25 +72,73 @@ type
     procedure DumpSelectedMemory1Click(Sender: TObject);
     procedure SelectAll1Click(Sender: TObject);
   private
-    FMemorySize : Int64;
+    FMemorySize       : Int64;
+    FCurrentProcessId : Cardinal;
+
+    {@M}
+    procedure OnSelectProcess(Sender: TObject; const AProcessId : Cardinal);
+  protected
+    {@M}
+    procedure OnDebugExitProcess(const AProcessId : Cardinal); override;
+    procedure OnDebugNewProcess(const AProcessId : Cardinal); override;
   public
     {@M}
-    procedure Refresh();
-    procedure Reset();
+    procedure Refresh(AProcessId : Integer = -1);
+    procedure ResetData();
 
     {@S}
     property MemorySize : Int64 write FMemorySize;
+
+    {@C}
+    constructor Create(AOwner : TComponent); override;
   end;
 
 implementation
 
 uses uFormMain, uGraphicUtils, uConstants, uMemoryUtils, FileCtrl,
-     System.Math, uMemoryMapThread, uFormDumpMemoryOperation, uMemoryDumpThread;
+     System.Math, uMemoryMapThread, uFormThreadOperation, uMemoryDumpThread;
 
 {$R *.dfm}
 
-procedure TFrameMemoryMap.Reset();
+procedure TFrameMemoryMap.OnDebugNewProcess(const AProcessId : Cardinal);
 begin
+  ///
+end;
+
+procedure TFrameMemoryMap.OnDebugExitProcess(const AProcessId : Cardinal);
+var ANode : PVirtualNode;
+begin
+  if AProcessId = FCurrentProcessId then begin
+    VST.BeginUpdate();
+    try
+      for ANode in VST.Nodes do
+        ANode.States := ANode.States + [vsDisabled];
+    finally
+      VST.EndUpdate();
+    end;
+  end;
+end;
+
+procedure TFrameMemoryMap.OnSelectProcess(Sender: TObject; const AProcessId : Cardinal);
+begin
+  Refresh(AProcessId);
+end;
+
+constructor TFrameMemoryMap.Create(AOwner : TComponent);
+begin
+  inherited Create(AOwner);
+  ///
+
+  self.FrameComponentComboProcess1.OnSelectProcess := OnSelectProcess;
+
+  FCurrentProcessId := 0;
+end;
+
+procedure TFrameMemoryMap.ResetData();
+begin
+  VST.Clear();
+  FMemorySize := 0;
+
   VST.Clear();
 end;
 
@@ -99,9 +148,7 @@ begin
 end;
 
 procedure TFrameMemoryMap.DumpSelectedMemory1Click(Sender: TObject);
-var AFormOperation  : TFormDumpMemoryOperation;
-    ADumpThread     : TMemoryDumpThread;
-
+var ADumpThread     : TMemoryDumpThread;
     pNode           : PVirtualNode;
     pData           : PTreeData;
     ABaseOffset     : NativeUInt;
@@ -119,51 +166,36 @@ begin
   if not SelectDirectory('Select output directory', '', ADirectory, [sdNewFolder, sdShowShares]) then
     Exit();
 
-  AFormOperation := TFormDumpMemoryOperation.Create(self);
-  try
-    ADumpThread := TMemoryDumpThread.Create(FormMain.DebugSessionInformation.ProcessId);
 
-    ADumpThread.OnThreadStart  := AFormOperation.OnThreadStart;
-    ADumpThread.OnThreadStop   := AFormOperation.OnThreadStop;
-    ADumpThread.OnTaskBegin    := AFormOperation.OnTaskBegin;
-    ADumpThread.OnTaskEnd      := AFormOperation.OnTaskEnd;
-    ADumpThread.OnTaskProgress := AFormOperation.OnTaskProgress;
+  ADumpThread := TMemoryDumpThread.Create(FormMain.DebugSessionInformation.ProcessId);
 
-    for pNode in VST.SelectedNodes do begin
-      pData := pNode.GetData;
-      if not Assigned(pData) then
-        continue;
-      ///
+  for pNode in VST.SelectedNodes do begin
+    pData := pNode.GetData;
+    if not Assigned(pData) then
+      continue;
+    ///
 
-      if Assigned(pData^.Page) then begin
-        ABaseOffset := NativeUInt(pData^.Page.PageAddress);
-        APrefix := 'page';
-      end else begin
-        ABaseOffset := NativeUInt(pData^.BaseAddress);
-        APrefix := 'region';
-      end;
-
-      AFileName := Format('%s\%s_%p_to_%p.bin', [
-        ADirectory,
-        APrefix,
-        Pointer(ABaseOffset),
-        Pointer(ABaseOffset + pData^.Size)
-      ]);
-
-      ///
-      ADumpThread.Tasks.Add(TMemoryDumpTask.Create(AFileName, ABaseOffset, pData^.Size));
+    if Assigned(pData^.Page) then begin
+      ABaseOffset := NativeUInt(pData^.Page.PageAddress);
+      APrefix := 'page';
+    end else begin
+      ABaseOffset := NativeUInt(pData^.BaseAddress);
+      APrefix := 'region';
     end;
 
-    ADumpThread.Start();
+    AFileName := Format('%s\%s_%p_to_%p.bin', [
+      ADirectory,
+      APrefix,
+      Pointer(ABaseOffset),
+      Pointer(ABaseOffset + pData^.Size)
+    ]);
 
-    AFormOperation.ShowModal();
-
-    if Assigned(ADumpThread) then
-      FreeAndNil(ADumpThread);
-  finally
-    if Assigned(AFormOperation) then
-      FreeAndNil(AFormOperation);
+    ///
+    ADumpThread.Tasks.Add(TMemoryDumpTask.Create(AFileName, ABaseOffset, pData^.Size));
   end;
+
+  ///
+  ADumpThread.Start();
 end;
 
 procedure TFrameMemoryMap.FullCollapse1Click(Sender: TObject);
@@ -178,25 +210,32 @@ end;
 
 procedure TFrameMemoryMap.PopupMenuPopup(Sender: TObject);
 begin
+  self.Refresh1.Enabled            := FCurrentProcessId > 0;
   self.DumpSelectedMemory1.Enabled := VST.FocusedNode <> nil;
+  self.FullExpand1.Enabled         := VST.TotalCount > 0;
+  self.FullCollapse1.Enabled       := self.FullExpand1.Enabled;
+  self.SelectAll1.Enabled          := self.FullExpand1.Enabled;
 end;
 
-procedure TFrameMemoryMap.Refresh();
+procedure TFrameMemoryMap.Refresh(AProcessId : Integer = -1);
 begin
-  VST.Clear();
-  FMemorySize := 0;
-  ///
-
   if not FormMain.Debugging then
     Exit();
-  ///
 
-  TMemoryMapThread.Create(FormMain.DebugSessionInformation.ProcessId, self);
+  if AProcessId = -1 then
+    AProcessId := FormMain.DebugSessionInformation.ProcessId;
+
+  FCurrentProcessId := AProcessId;
+
+  self.FrameComponentComboProcess1.SelectProcess(AProcessId);
+
+  // TODO: Register to Thread Watcher Pool
+  TMemoryMapThread.Create(AProcessId, self);
 end;
 
 procedure TFrameMemoryMap.Refresh1Click(Sender: TObject);
 begin
-  self.Refresh();
+  self.Refresh(FCurrentProcessId);
 end;
 
 procedure TFrameMemoryMap.VSTBeforeCellPaint(Sender: TBaseVirtualTree;

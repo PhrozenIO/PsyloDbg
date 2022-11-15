@@ -64,7 +64,7 @@ type
   public
     {@M}
     procedure LoadJsonNode(const AJsonNode : ISuperObject; const AParent : PVirtualNode = nil);
-    procedure Reset();
+    procedure ResetData();
   end;
 
 implementation
@@ -170,7 +170,7 @@ begin
   self.ButtonCopy.Enabled := (Length(self.EditClipboard.Text) > 0);
 end;
 
-procedure TFrameEventDetail.Reset();
+procedure TFrameEventDetail.ResetData();
 begin
   self.EditClipboard.Clear();
 
@@ -185,7 +185,7 @@ var pNode      : PVirtualNode;
     pChildData : PTreeData;
 begin
   if AParent = nil then
-    self.Reset();
+    self.ResetData();
   ///
 
   VST.BeginUpdate();

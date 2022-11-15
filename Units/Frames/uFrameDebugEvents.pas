@@ -28,7 +28,6 @@ uses
 
 type
   TTreeData = record
-    Resolved            : Boolean;
     Data                : ISuperObject;
     ProcessImgIdx       : Integer;
     EventKindImgIdx     : Integer;
@@ -55,13 +54,12 @@ type
     procedure VSTGetNodeDataSize(Sender: TBaseVirtualTree;
       var NodeDataSize: Integer);
   private
-    FEventDetailFrame         : TFrameEventDetail;
-    FUnresolvedProcessTracker : TList<PTreeData>;
-    FDLLTracker               : TDictionary<Pointer, String>; // DllBase, DllImagePath
+    FEventDetailFrame : TFrameEventDetail;
+    FDLLTracker       : TDictionary<Pointer, String>; // DllBase, DllImagePath
   public
     {@M}
     procedure DisplayDebugEvent(const ADebugEvent : TDebugEvent);
-    procedure Reset();
+    procedure ResetData();
 
     {@C}
     constructor Create(AOwner : TComponent); override;
@@ -70,17 +68,17 @@ type
 
 implementation
 
-uses uFormMain, uFunctions, uExceptions, uEventUtils, uConstants;
+uses uFormMain, uFunctions, uExceptions, uEventUtils, uConstants, uFormDebugProcessTree;
 
 {$R *.dfm}
 
-procedure TFrameDebugEvents.Reset();
+procedure TFrameDebugEvents.ResetData();
 begin
   VST.Clear();
 
   self.MultiPanel.PanelCollection.Items[1].Visible := False;
 
-  self.FEventDetailFrame.Reset();
+  self.FEventDetailFrame.ResetData();
 end;
 
 constructor TFrameDebugEvents.Create(AOwner : TComponent);
@@ -91,7 +89,6 @@ begin
   FEventDetailFrame := TFrameEventDetail.Create(PanelDetail);
   FEventDetailFrame.Parent := PanelDetail;
 
-  FUnresolvedProcessTracker := TList<PTreeData>.Create();
   FDLLTracker := TDictionary<Pointer, String>.Create();
 end;
 
@@ -99,9 +96,6 @@ destructor TFrameDebugEvents.Destroy();
 begin
   if Assigned(FEventDetailFrame) then
     FreeAndNil(FEventDetailFrame);
-
-  if Assigned(FUnresolvedProcessTracker) then
-    FreeAndNil(FUnresolvedProcessTracker);
 
   if Assigned(FDLLTracker) then
     FreeAndNil(FDLLTracker);
@@ -221,8 +215,6 @@ var pNode              : PVirtualNode;
     pCurrentException  : PExceptionRecord;
     AJsonArray         : ISuperArray;
     AJsonObject        : ISuperObject;
-    AResolvedProcess   : TList<PTreeData>;
-    pResolveData       : PTreeData;
     AHandle            : THandle;
 
     function ReadRemoteString(const pOffset : Pointer; const ALength : Cardinal; const AUnicode : Boolean) : String; overload;
@@ -347,7 +339,7 @@ begin
 
   VST.BeginUpdate();
   try
-    hProcess := OpenProcess(PROCESS_VM_READ, False, ADebugEvent.dwProcessId);
+    hProcess := OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION or PROCESS_VM_READ, False, ADebugEvent.dwProcessId);
     if hProcess = 0 then
       raise EWindowsException.Create('OpenProcess');
     ///
@@ -357,20 +349,8 @@ begin
     pData := pNode.GetData;
 
     // Resolve Image Path
-    try
-      AImagePath := GetImagePathFromProcessId(ADebugEvent.dwProcessId);
-
-      pData^.ProcessImgIdx := SystemFileIcon(AImagePath);
-
-      pData^.Resolved := True;
-    except
-      pData^.ProcessImgIdx := FormMain.DefaultExeIconIndex;
-
-      pData^.Resolved := False;
-
-      ///
-      FUnresolvedProcessTracker.Add(pData);
-    end;
+    AImagePath := DELF_GetProcessImageFileName(hProcess);
+    pData^.ProcessImgIdx := SystemFileIcon(AImagePath);
 
     pData^.Data := SO();
 
@@ -401,25 +381,28 @@ begin
         pData^.Data.I[_FILE_HANDLE] := ADebugEvent.CreateProcessInfo.hFile;
         pData^.Data.I[_PROCESS_HANDLE] := ADebugEvent.CreateProcessInfo.hProcess;
         pData^.Data.I[_THREAD_HANDLE] := ADebugEvent.CreateProcessInfo.hThread;
-        pData^.Data.I[_BASE_OF_IMAGE] := NativeUInt(ADebugEvent.CreateProcessInfo.lpBaseOfImage);
+        pData^.Data.U[_BASE_OF_IMAGE] := NativeUInt(ADebugEvent.CreateProcessInfo.lpBaseOfImage);
         pData^.Data.I[_DEBUG_INFO_FILE_OFFSET] := ADebugEvent.CreateProcessInfo.dwDebugInfoFileOffset;
         pData^.Data.I[_DEBUG_INFO_SIZE] := ADebugEvent.CreateProcessInfo.nDebugInfoSize;
-        pData^.Data.I[_THREAD_LOCAL_BASE] := NativeUInt(ADebugEvent.CreateProcessInfo.lpThreadLocalBase);
-        pData^.Data.I[_START_ADDRESS] := NativeUInt(ADebugEvent.CreateProcessInfo.lpStartAddress);
+        pData^.Data.U[_THREAD_LOCAL_BASE] := NativeUInt(ADebugEvent.CreateProcessInfo.lpThreadLocalBase);
+        pData^.Data.U[_START_ADDRESS] := NativeUInt(ADebugEvent.CreateProcessInfo.lpStartAddress);
 
-        pData^.Data.I[_IMAGE_NAME] := NativeUInt(ADebugEvent.CreateProcessInfo.lpImageName);
+        pData^.Data.U[_IMAGE_NAME] := NativeUInt(ADebugEvent.CreateProcessInfo.lpImageName);
         pData^.Data.B[_UNICODE] := (ADebugEvent.CreateProcessInfo.fUnicode > 0);
 
         pData^.Data.S[_RESOLVED_IMAGE_NAME] := ReadRemoteString_PTRPTR(
                                                                     ADebugEvent.CreateProcessInfo.lpImageName,
                                                                     pData^.Data.B[_UNICODE]
         );
+
+        // Track new spanwed process
+        FormMain.DebugSessionInformation.AddProcess(ADebugEvent.dwProcessId, AImagePath);
       end;
 
       CREATE_THREAD_DEBUG_EVENT : begin
         pData^.Data.I[_THREAD_HANDLE] := ADebugEvent.CreateThread.hThread;
-        pData^.Data.I[_THREAD_LOCAL_BASE] := NativeUInt(ADebugEvent.CreateThread.lpThreadLocalBase);
-        pData^.Data.I[_START_ADDRESS] := NativeUInt(ADebugEvent.CreateThread.lpStartAddress);
+        pData^.Data.U[_THREAD_LOCAL_BASE] := NativeUInt(ADebugEvent.CreateThread.lpThreadLocalBase);
+        pData^.Data.U[_START_ADDRESS] := NativeUInt(ADebugEvent.CreateThread.lpStartAddress);
       end;
 
       EXCEPTION_DEBUG_EVENT : begin
@@ -466,11 +449,11 @@ begin
               AString := 'Reserved';
           end;
 
-          AJsonObject.I[_EXCEPTION_ADDRESS] := NativeUInt(pCurrentException^.ExceptionAddress);
+          AJsonObject.U[_EXCEPTION_ADDRESS] := NativeUInt(pCurrentException^.ExceptionAddress);
           AJsonObject.I[_NUMBER_PARAMETERS] := pCurrentException^.NumberParameters;
-          AJsonObject.I[_EXCEPT_ADDR] := NativeUInt(pCurrentException^.ExceptAddr);
-          AJsonObject.I[_EXCEPT_OBJECT] := NativeUInt(pCurrentException^.ExceptObject);
-          AJsonObject.I[_NEXT_EXCEPTION] := NativeUInt(pCurrentException^.ExceptionRecord);
+          AJsonObject.U[_EXCEPT_ADDR] := NativeUInt(pCurrentException^.ExceptAddr);
+          AJsonObject.U[_EXCEPT_OBJECT] := NativeUInt(pCurrentException^.ExceptObject);
+          AJsonObject.U[_NEXT_EXCEPTION] := NativeUInt(pCurrentException^.ExceptionRecord);
 
           AJsonObject.S[_EXCEPTION_FLAGS_MEANING] := AString;
 
@@ -488,18 +471,21 @@ begin
 
       EXIT_PROCESS_DEBUG_EVENT : begin
         pData^.Data.I[_EXIT_CODE] := ADebugEvent.ExitProcess.dwExitCode;
+
+        // Track process termination
+        FormMain.DebugSessionInformation.RemoveProcess(ADebugEvent.dwProcessId);
       end;
 
       EXIT_THREAD_DEBUG_EVENT : begin
-        pData^.Data.I[_EXIT_CODE] := NativeUInt(ADebugEvent.ExitThread.dwExitCode);
+        pData^.Data.I[_EXIT_CODE] := ADebugEvent.ExitThread.dwExitCode;
       end;
 
       LOAD_DLL_DEBUG_EVENT : begin
         pData^.Data.I[_FILE_HANDLE] := ADebugEvent.LoadDll.hFile;
-        pData^.Data.I[_BASE_OF_DLL] := NativeUInt(ADebugEvent.LoadDll.lpBaseOfDll);
+        pData^.Data.U[_BASE_OF_DLL] := NativeUInt(ADebugEvent.LoadDll.lpBaseOfDll);
         pData^.Data.I[_DEBUG_INFO_FILE_OFFSET] := ADebugEvent.LoadDll.dwDebugInfoFileOffset;
         pData^.Data.I[_DEBUG_INFO_SIZE] := ADebugEvent.LoadDll.nDebugInfoSize;
-        pData^.Data.I[_IMAGE_NAME] := NativeUInt(ADebugEvent.LoadDll.lpImageName);
+        pData^.Data.U[_IMAGE_NAME] := NativeUInt(ADebugEvent.LoadDll.lpImageName);
         pData^.Data.B[_UNICODE] := (ADebugEvent.LoadDll.fUnicode > 0);
 
         pData^.Data.S[_RESOLVED_IMAGE_NAME] := ReadRemoteString_PTRPTR(
@@ -532,7 +518,7 @@ begin
       end;
 
       UNLOAD_DLL_DEBUG_EVENT : begin
-        pData^.Data.I[_BASE_OF_DLL] := NativeUInt(ADebugEvent.UnloadDll.lpBaseOfDll);
+        pData^.Data.U[_BASE_OF_DLL] := NativeUInt(ADebugEvent.UnloadDll.lpBaseOfDll);
 
         if FDLLTracker.ContainsKey(ADebugEvent.UnloadDll.lpBaseOfDll) then begin
           if FDLLTracker.TryGetValue(ADebugEvent.UnloadDll.lpBaseOfDll, AString) then
@@ -543,35 +529,6 @@ begin
         end;
       end;
     end;
-
-    /// Fix unresolved process
-    if FUnresolvedProcessTracker.Count > 0 then begin
-      AResolvedProcess := TList<PTreeData>.Create();
-      try
-        for pResolveData in FUnresolvedProcessTracker do begin
-          if not Assigned(pResolveData) then
-            continue;
-
-          if (pResolveData^.Data.I[_PROCESS_ID] = pData^.Data.I[_PROCESS_ID]) and (pData^.Resolved) then begin
-            pResolveData^.ProcessImgIdx := pData^.ProcessImgIdx;
-
-            pResolveData^.Data.S[_IMAGE_PATH] := pData^.Data.S[_IMAGE_PATH];
-
-            ///
-            AResolvedProcess.Add(pResolveData);
-          end;
-        end;
-
-        // Purge List
-        for pResolveData in AResolvedProcess do begin
-          FUnresolvedProcessTracker.Remove(pResolveData);
-        end;
-      finally
-        if Assigned(AResolvedProcess) then
-          FreeAndNil(AResolvedProcess);
-      end;
-    end;
-
   finally
     if hProcess <> 0 then
       CloseHandle(hProcess);

@@ -1,5 +1,5 @@
 <p align="center">
-<img src="Assets\sshot-1.png"/>
+<img src="Assets\header.png"/>
 </p>
 
 # PsyloDbg
@@ -15,31 +15,31 @@ The project is still in very early stage, it is expected to grow in feature prog
 ## Debug Events
 
 <p align="center">
-<img src="Assets\sshot-0.png"/>
+<img src="Assets\events.png"/>
 </p>
 
 ## Memory Map
 
 <p align="center">
-<img src="Assets\sshot-2.png"/>
+<img src="Assets\memmap.png"/>
 </p>
 
 ## Loaded Modules
 
 <p align="center">
-<img src="Assets\sshot-3.png"/>
+<img src="Assets\modules.png"/>
 </p>
 
 ## Debugged Process Tree
 
 <p align="center">
-<img src="Assets\sshot-4.png"/>
+<img src="Assets\proctree.png"/>
 </p>
 
 ## Dump and Reconstruct PE Image (Beta)
 
 <p align="center">
-<img src="Assets\sshot-5.png"/>
+<img src="Assets\imagedump.png"/>
 </p>
 
 ## Debugger Features
@@ -103,7 +103,7 @@ The project is still in very early stage, it is expected to grow in feature prog
 - Logging.
 - Themes Supported.
 
-### 2022/XX/XX : v0.3
+### 2022/11/15 : v0.3
 
 - Option to keep session information when debug process stop.
 - PsyloDbg Window Title is now dynamic.
